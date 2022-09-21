@@ -3,13 +3,13 @@ import io
 import sys
 from setuptools import find_packages, setup, Command
 
-with open('./requirements.txt') as rf:
+with open('ConditionalOSDE/requirements.txt') as rf:
       requirements = rf.read().splitlines()
 
-with open('README.md') as rf:
+with open('ConditionalOSDE/README.md') as rf:
     readme = rf.read()
 
-with open('LICENSE') as rf:
+with open('ConditionalOSDE/LICENSE') as rf:
     license = rf.read()
 
 
@@ -28,6 +28,6 @@ setup(name='cosde',
           'Operating System :: Unix',
           'Operating System :: iOS'
           ],
-    packages=['cosde'],
+    packages=['ConditionalOSDE/cosde'],
     license=license,
     install_requires=requirements)
