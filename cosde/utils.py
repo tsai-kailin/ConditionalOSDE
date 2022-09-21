@@ -59,7 +59,7 @@ def inner_product(fobj1, fobj2):
     G_i = np.zeros((r1, r2))
     for j in range(r1):
       for k in range(r2):
-        G_i[j, k] = inner_product_base(fobj1.baselist[j], fobj2.baselist[k]s)
+        G_i[j, k] = inner_product_base(fobj1.baselist[j], fobj2.baselist[k])
     G.append(G_i)
 
   G_all = np.prod(np.array(G), axis=0)
