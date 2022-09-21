@@ -107,8 +107,26 @@ class MultiOSDE:
     for i, eigh in enumerate(temp_eigh):
       self.eigh.append(eigh[:,keep_idx])
       self.eigv.append(temp_eigv[i][keep_idx])
+    
+    #flip the eigen function so the non-positive function become non-neagtvie function
+    
+
+      
+    for id in keep_idx:  
+      neg_list = [(temp_weight[k][id]<=0+1e-3).all() for k in range(len(x_list))] #0.001 is the small tolerance
+      if (sum(neg_list) % 2 == 0) and sum(neg_list)>0:
+        print('flip functions: ', id)
+        idx = [i for i,d in enumerate(neg_list) if d==True]
+        for i in idx:
+          temp_weight[i][id] = - temp_weight[i][id]
+      
+
+      
+
+    
     for k in range(len(x_list)):
       for id in keep_idx:
+
         self.weight[k].append(temp_weight[k][id])
 
 
