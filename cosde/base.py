@@ -56,6 +56,12 @@ class LSEigenBase:
 
     self.baselist = baselist
     self.coeff = coeff
+    
+  def get_params(self):
+    param_dict = {'base_list': self.baselist,
+                  'coeff': self.coeff}
+    return param_dict    
+
   def eval(self,xlist):
     """
     evaluate the density at x_list 
