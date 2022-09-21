@@ -66,7 +66,7 @@ def least_squares(f_wu, f_wx):
   Parameters
   ----------
   f_wu: list of LSEigenBase objetcs, [f(W|U=i)]
-  f_wx: list of LSEigenBase objects, [f(W|X)]
+  f_wx: a LSEigenBase object, f(W|X)
 
   Returns
   ---------
@@ -82,7 +82,7 @@ def least_squares(f_wu, f_wx):
   
   y = np.zeros(k)
   for i in range(k):
-    y[i] = inner_product(f_wu[i], f_wx[i])
+    y[i] = inner_product(f_wu[i], f_wx)
   
   invK = np.linalg.solve(K, np.eye(k))
 
@@ -198,9 +198,9 @@ def compute_inv_eigen_system(D, y_coor):
   w, vh = np.linalg.eig(D)
 
   eigen_func = []
-  print(vh)
+
   vh = np.linalg.solve(vh,np.eye(vh.shape[0]))
-  print(vh)
+
   for i in range(vh.shape[1]):
     efunc = LSEigenBase(y_coor, vh[:,i])
     eigen_func.append(efunc)
