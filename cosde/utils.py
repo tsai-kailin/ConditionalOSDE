@@ -46,18 +46,22 @@ def inner_product(fobj1, fobj2):
   r1 = len(fobj1.baselist)
   r2 = len(fobj2.baselist)
 
+  G = []
   if isinstance(fobj1.baselist[0], list):
     num_modes = len(fobj1.baselist[0])
+    for i in range(num_modes):
+      G_i = np.zeros((r1, r2))
+      for j in range(r1):
+        for k in range(r2):
+          G_i[j, k] = inner_product_base(fobj1.baselist[j][i], fobj2.baselist[k][i])
+      G.append(G_i)
   else:
-    num_modes = 1
-
-  G = []
-  for i in range(num_modes):
     G_i = np.zeros((r1, r2))
     for j in range(r1):
       for k in range(r2):
-        G_i[j, k] = inner_product_base(fobj1.baselist[j][i], fobj2.baselist[k][i])
+        G_i[j, k] = inner_product_base(fobj1.baselist[j], fobj2.baselist[k]s)
     G.append(G_i)
+
   G_all = np.prod(np.array(G), axis=0)
   t1 = np.einsum('i,ij->j', fobj1.coeff, G_all)
   t2 = np.dot(t1, fobj2.coeff)
