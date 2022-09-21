@@ -45,7 +45,12 @@ def inner_product(fobj1, fobj2):
   """
   r1 = len(fobj1.baselist)
   r2 = len(fobj2.baselist)
-  num_modes = len(fobj1.baselist[0])
+
+  if isinstance(fobj1.baselist[0], list):
+    num_modes = len(fobj1.baselist[0])
+  else:
+    num_modes = 1
+
   G = []
   for i in range(num_modes):
     G_i = np.zeros((r1, r2))
