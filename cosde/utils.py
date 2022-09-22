@@ -99,7 +99,7 @@ def l2_norm(fobj1):
   out = np.sqrt(max(inner_product(fobj1, fobj1), 1e-16))
   return out
 
-def least_squares(f_wu, f_wx, rcond=1e-5):
+def least_squares(f_wu, f_wx, rcond=1e-5, verbose=False):
   """
   output a vector of probability distribution
   
@@ -108,6 +108,7 @@ def least_squares(f_wu, f_wx, rcond=1e-5):
   f_wu: list of LSEigenBase objetcs, [f(W|U=i)]
   f_wx: a LSEigenBase object, f(W|X)
   rcond: cut-off ratio of the smallest singular value, float
+  verbose: boolean, default False
   Returns
   ---------
   f_ux: ndarray
@@ -128,7 +129,8 @@ def least_squares(f_wu, f_wx, rcond=1e-5):
 
   #f_ux = np.einsum('ij,j->i', invK, y)
   f_ux, res,rk,s = np.linalg.lstsq(K,y, rcond=rcond)
-  print('results: residuals:{} rank:{} singular values{}'.format(res, rk,s))
+  if verbose:
+    print('results: residuals:{} rank:{} singular values{}'.format(res, rk,s))
   return f_ux
 
 
