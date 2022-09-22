@@ -1,4 +1,7 @@
-#description: test the COSDE
+"""test the COSDE"""
+# Author: Katherine Tsai <kt14@illinois.edu>
+#        
+# License: MIT License
 import unittest
 import numpy as np
 from cosde.cosde import MultiCOSDE

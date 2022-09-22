@@ -44,6 +44,15 @@ class EigenBase:
                   'data': self.data}
     return param_dict
 
+  def set_weight(self, weight):
+    self.weight = weight
+
+  def set_kernel(self, kernel):
+    self.kernel = kernel
+
+  def set_data(self, data):
+    self.data = data
+
 #linear sum of EigenBase
 class LSEigenBase:
   def __init__(self, baselist, coeff):
@@ -56,11 +65,18 @@ class LSEigenBase:
 
     self.baselist = baselist
     self.coeff = coeff
-    
+
   def get_params(self):
     param_dict = {'base_list': self.baselist,
                   'coeff': self.coeff}
     return param_dict    
+  
+  def set_baselist(self, baselist):
+    self.baselist = baselist
+
+  def set_coeff(self, coeff):
+    self.coeff = coeff
+
 
   def eval(self,xlist):
     """

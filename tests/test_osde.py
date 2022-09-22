@@ -1,4 +1,7 @@
-#description: test the OSDE
+"""test the OSDE"""
+# Author: Katherine Tsai <kt14@illinois.edu>
+#        
+# License: MIT License
 import unittest
 import numpy as np
 from cosde.osde import MultiOSDE

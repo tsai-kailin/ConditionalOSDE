@@ -1,4 +1,7 @@
-#description: test the main
+"""test the base components"""
+# Author: Katherine Tsai <kt14@illinois.edu>
+#        
+# License: MIT License
 import unittest
 import numpy as np
 from cosde.base import EigenBase, LSEigenBase

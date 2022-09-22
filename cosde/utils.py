@@ -5,7 +5,9 @@
 
 import numpy as np
 import copy 
-from cosde.base import LSEigenBase
+from cosde.base import EigenBase, LSEigenBase
+
+
 
 def inner_product_base(fobj1, fobj2):
   """
@@ -14,7 +16,10 @@ def inner_product_base(fobj1, fobj2):
   ----------------
   fobj1: EigenBase
   fobj2: EigenBase
+  
+  Return
   ----------------
+  t2: float
   """
   params1 = fobj1.get_params()
   params2 = fobj2.get_params()
@@ -33,6 +38,19 @@ def inner_product_base(fobj1, fobj2):
   t2 = np.dot(weight1, t1)
   return t2
 
+def l2_norm_base(fobj1):
+  """
+  return norm of EigenBase object
+  Parameter
+  ----------
+  fobj1: EigenBase
+
+  Return
+  ----------
+  out: float
+  """
+  out = np.sqrt(max(inner_product_base(fobj1, fobj1), 1e-16))
+  return out
 
 def inner_product(fobj1, fobj2):
   """
@@ -67,8 +85,21 @@ def inner_product(fobj1, fobj2):
   t2 = np.dot(t1, fobj2.coeff)
   return t2
 
+def l2_norm(fobj1):
+  """
+  return norm of LSEigenBase object
+  Parameter
+  ----------
+  fobj1: EigenBase
 
-def least_squares(f_wu, f_wx):
+  Return
+  ----------
+  out: float
+  """
+  out = np.sqrt(max(inner_product(fobj1, fobj1), 1e-16))
+  return out
+
+def least_squares(f_wu, f_wx, rcond=1e-5):
   """
   output a vector of probability distribution
   
@@ -76,7 +107,7 @@ def least_squares(f_wu, f_wx):
   ----------
   f_wu: list of LSEigenBase objetcs, [f(W|U=i)]
   f_wx: a LSEigenBase object, f(W|X)
-
+  rcond: cut-off ratio of the smallest singular value, float
   Returns
   ---------
   f_ux: ndarray
@@ -93,10 +124,11 @@ def least_squares(f_wu, f_wx):
   for i in range(k):
     y[i] = inner_product(f_wu[i], f_wx)
   
-  invK = np.linalg.solve(K, np.eye(k))
+  #invK = np.linalg.solve(K, np.eye(k))
 
-  f_ux = np.einsum('ij,j->i', invK, y)
-
+  #f_ux = np.einsum('ij,j->i', invK, y)
+  f_ux, res,rk,s = np.linalg.lstsq(K,y, rcond=rcond)
+  print('results: residuals:{} rank:{} singular values{}'.format(res, rk,s))
   return f_ux
 
 
@@ -214,7 +246,107 @@ def compute_inv_eigen_system(D, y_coor):
     efunc = LSEigenBase(y_coor, vh[:,i])
     eigen_func.append(efunc)
   return w, eigen_func
-    
+
+def Gram_Schmidt_base(f_list):
+  """
+  compute Gram-schmidt procedure:
+  Parameters
+  ----------
+  f_list: list of EigenBase objects to orthogonalize
+
+  Returns
+  ----------
+  out_list: list of LSEigenBase objects that are orthonormal
+  R: coefficient matrix, ndarray
+  """
+  out_list = []
+  k = len(f_list)
+  R = np.zeros((k, k))
+  for i, f in enumerate(f_list):
+    new_coeff = f.get_params()['weight']
+    for j, g in enumerate(out_list):
+
+      r = inner_product_base(f,g)
+      new_coeff -= r*g.get_params()['weight']
+    params = f.get_params()
+    new_f = EigenBase(params['kernel'], params['data'], new_coeff)
+    l2 = l2_norm_base(new_f)
+    new_coeff /= l2
+    new_f.set_weight(new_coeff)
+    out_list.append(new_f)
+  for i, f in enumerate(f_list):
+    for j, g in enumerate(out_list):
+      R[j,i] = inner_product_base(f,g)
+  return out_list, R
+
+
+def check_baselist(fobj1, fobj2):
+  """
+  check whether two baselists are identical
+
+  Paramter
+  --------
+  fobj1: LSEigenBase object
+  fobj2: LSEigenBase object
+
+  Return
+  ------
+  check: True or False
+  """
+  if isinstance(fobj1.baselist[0], list):
+    for k in range(len(fobj1.baselist[0])):
+      check_listk = [i !=j for i,j in zip(fobj1.baselist[k], fobj2.baselist[k])]
+      if(sum(check_list) > 0):
+        return False
+    return True
+  else:
+    check_list = [i !=j for i,j in zip(fobj1.baselist, fobj2.baselist)]
+    check = (sum(check_list) == 0)
+    return check
+
+def Gram_Schmidt(f_list):
+  """
+  compute Gram-schmidt procedure:
+  constraint: each LSEigenBase object has same base_list
+  Parameters
+  ----------
+  f_list: list of LSEigenBase objects to orthogonalize
+
+  Returns
+  ----------
+  out_list: list of LSEigenBase objects that are orthonormal
+  R: coefficient matrix, ndarray
+  """
+  
+  out_list = []
+  k = len(f_list)
+  for i in range(k):
+    for j in range(i+1,k):
+      check = check_baselist(f_list[i], f_list[j])
+      assert(check == True)
+
+  R = np.zeros((k, k))
+  for i, f in enumerate(f_list):
+    new_coeff = f.get_params()['coeff']
+    for j, g in enumerate(out_list):
+
+      r = inner_product(f,g)
+      new_coeff -= r*g.get_params()['coeff']
+    params = f.get_params()
+    new_f = LSEigenBase(params['base_list'], new_coeff)
+    l2 = l2_norm(new_f)
+    new_coeff /= l2
+    new_f.set_coeff(new_coeff)
+    out_list.append(new_f)
+  for i, f in enumerate(f_list):
+    for j, g in enumerate(out_list):
+      R[j,i] = inner_product(f,g)
+  return out_list, R
+
+  
+
+
+
   
 
 
