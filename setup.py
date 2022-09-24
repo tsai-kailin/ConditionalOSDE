@@ -6,8 +6,7 @@ from setuptools import find_packages, setup, Command
 with open('requirements.txt') as rf:
       requirements = rf.read().splitlines()
 
-with open('README.md') as rf:
-    readme = rf.read()
+
 
 with open('LICENSE') as rf:
     license = rf.read()
@@ -18,7 +17,7 @@ setup(name='cosde',
       description='conditional orthogonal series density estimator',
       author='Katherine Tsai',
       author_email='kt14@illinois.edu',
-      long_description=readme,
+      long_description='implementation of orthogonal series density estimator',
       classifiers=[
           'Development Status :: 5 - Production/Stable',
           'Intended Audience :: Science/Research',
@@ -31,3 +30,4 @@ setup(name='cosde',
     packages=['cosde'],
     license=license,
     install_requires=requirements)
+
