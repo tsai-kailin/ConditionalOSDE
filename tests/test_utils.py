@@ -76,7 +76,7 @@ class utilsTest(unittest.TestCase):
     def test_l2_norm_base(self):
         y0 = l2_norm_base(self.EBobj1)
         self.assertTrue(y0>=0)
-        
+
     def test_l2_norm(self):
 
         y0 = l2_norm(self.LSEBobj1)
@@ -84,6 +84,11 @@ class utilsTest(unittest.TestCase):
 
     def test_least_squares(self):
         res = least_squares([self.LSEBobj1], self.LSEBobj1)
+        self.assertTrue(np.abs(res- 1.) <= 1e-5)
+
+    def test_least_squares_reuse(self):
+        #test the least-sqaures esimtator reusing the Gram matrix
+        res = least_squares([self.LSEBobj1], self.LSEBobj1, reuse_Gram=True)
         self.assertTrue(np.abs(res- 1.) <= 1e-5)
 
     def test_gram_schmidt_base(self):

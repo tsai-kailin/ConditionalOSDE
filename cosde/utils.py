@@ -8,10 +8,10 @@ import copy
 from cosde.base import EigenBase, LSEigenBase
 
 
-
-def inner_product_base(fobj1, fobj2):
+def compute_new_gram(fobj1, fobj2):
   """
-  inner product of two EigenBase objects
+  compute new gram matrix such that each entry is \int K(x,xn)(x,xm)dx, where K is the original kernel function
+  
   Parameters
   ----------------
   fobj1: EigenBase
@@ -19,7 +19,7 @@ def inner_product_base(fobj1, fobj2):
   
   Return
   ----------------
-  t2: float
+  new_gram: new gram matrix
   """
   params1 = fobj1.get_params()
   params2 = fobj2.get_params()
@@ -28,14 +28,90 @@ def inner_product_base(fobj1, fobj2):
   assert(params1['kernel'] == params2['kernel'])
   kernel = params1['kernel']
   l = kernel.get_params()['length_scale']
+ 
   new_kernel = copy.deepcopy(kernel)
   new_kernel.set_params(length_scale=l*np.sqrt(2))
-  gram = kernel(data1, data2) * np.sqrt(np.pi)*l
+  new_gram = new_kernel(data1, data2) * np.sqrt(np.pi)*l
+  return new_gram
+
+
+def inner_product_base(fobj1, fobj2, new_gram = None):
+  """
+  inner product of two EigenBase objects
+  Parameters
+  ----------------
+  fobj1: EigenBase
+  fobj2: EigenBase
+  new_gram: gram matrix (for acceleration)
+  
+  Return
+  ----------------
+  t2: float
+  """
+  
+  #get parameters
+  params1 = fobj1.get_params()
+  params2 = fobj2.get_params()
+  
+ 
+  if new_gram is None:
+    new_gram = compute_new_gram(fobj1, fobj2)
+
+
+  
   weight1 = params1['weight']
   weight2 = params2['weight']
-
-  t1 = np.einsum('ij, j->i', gram, weight2)
+  
+  t1 = np.einsum('ij, j->i', new_gram, weight2)
+  
   t2 = np.dot(weight1, t1)
+  
+
+  
+  
+  return t2
+
+
+def inner_product(fobj1, fobj2, reuse_Gram=False):
+  """
+  inner product of two LSEigenBase objects
+  Parameters
+  ----------------
+  fobj1: LSEigenBase
+  fobj2: LSEigenBase
+  reuse_Gram: reuse gram matrix (for acceleration)
+  This is only valid when Eigenbase objects in fobj shares same kernel and data
+  ----------------
+  """
+  r1 = len(fobj1.baselist)
+  r2 = len(fobj2.baselist)
+
+  G = []
+  if isinstance(fobj1.baselist[0], list):
+    num_modes = len(fobj1.baselist[0])
+    for i in range(num_modes):
+      new_gram = None
+      if reuse_Gram==True:
+        new_gram = compute_new_gram(fobj1.baselist[0][i], fobj2.baselist[0][i])
+      for j in range(r1):
+        for k in range(r2):
+          G_i[j, k] = inner_product_base(fobj1.baselist[j][i], fobj2.baselist[k][i], new_gram)
+      G.append(G_i)
+  else:
+    G_i = np.zeros((r1, r2))
+    new_gram = None
+    if reuse_Gram==True:
+      new_gram = compute_new_gram(fobj1.baselist[0], fobj2.baselist[0])
+    for j in range(r1):
+      for k in range(r2):
+        G_i[j, k] = inner_product_base(fobj1.baselist[j], fobj2.baselist[k], new_gram)
+    G.append(G_i)
+
+  G_all = np.prod(np.array(G), axis=0)
+  t1 = np.einsum('i,ij->j', fobj1.coeff, G_all)
+  t2 = np.dot(t1, fobj2.coeff)
+  #t1 = np.einsum('i, ij, j->',fobj1.coeff, G_all,fobj2.coeff , optimize=True)
+
   return t2
 
 def l2_norm_base(fobj1):
@@ -52,38 +128,6 @@ def l2_norm_base(fobj1):
   out = np.sqrt(max(inner_product_base(fobj1, fobj1), 1e-16))
   return out
 
-def inner_product(fobj1, fobj2):
-  """
-  inner product of two LSEigenBase objects
-  Parameters
-  ----------------
-  fobj1: LSEigenBase
-  fobj2: LSEigenBase
-  ----------------
-  """
-  r1 = len(fobj1.baselist)
-  r2 = len(fobj2.baselist)
-
-  G = []
-  if isinstance(fobj1.baselist[0], list):
-    num_modes = len(fobj1.baselist[0])
-    for i in range(num_modes):
-      G_i = np.zeros((r1, r2))
-      for j in range(r1):
-        for k in range(r2):
-          G_i[j, k] = inner_product_base(fobj1.baselist[j][i], fobj2.baselist[k][i])
-      G.append(G_i)
-  else:
-    G_i = np.zeros((r1, r2))
-    for j in range(r1):
-      for k in range(r2):
-        G_i[j, k] = inner_product_base(fobj1.baselist[j], fobj2.baselist[k])
-    G.append(G_i)
-
-  G_all = np.prod(np.array(G), axis=0)
-  t1 = np.einsum('i,ij->j', fobj1.coeff, G_all)
-  t2 = np.dot(t1, fobj2.coeff)
-  return t2
 
 def l2_norm(fobj1):
   """
@@ -99,7 +143,7 @@ def l2_norm(fobj1):
   out = np.sqrt(max(inner_product(fobj1, fobj1), 1e-16))
   return out
 
-def least_squares(f_wu, f_wx, rcond=1e-5, verbose=False):
+def least_squares(f_wu, f_wx, rcond=1e-5, verbose=False, reuse_Gram=False):
   """
   output a vector of probability distribution
   
@@ -115,15 +159,15 @@ def least_squares(f_wu, f_wx, rcond=1e-5, verbose=False):
   """
 
   k = len(f_wu)
-
+  
   K = np.zeros((k, k))
   for i in range(k):
     for j in range(k):
-      K[i,j] = inner_product(f_wu[i], f_wu[j])
+      K[i,j] = inner_product(f_wu[i], f_wu[j], reuse_Gram)
   
   y = np.zeros(k)
   for i in range(k):
-    y[i] = inner_product(f_wu[i], f_wx)
+    y[i] = inner_product(f_wu[i], f_wx, reuse_Gram)
   
   #invK = np.linalg.solve(K, np.eye(k))
 
