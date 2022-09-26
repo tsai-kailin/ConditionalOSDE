@@ -242,12 +242,26 @@ def compute_AdaggerB(A, B, k):
 
       D[i-1,j-1] = compute_AdaggerB_ij(A, B, i, j, k)
   x_coor = []
+  
+  remain_coor = np.delete(np.arange(A.mode)+1,k)
   for i in range(1,imax+1):
-    x_coor.append(A.get_eigen_function(k, i))
+    if remain_coor.size > 1:
+      sub_coor = []
+      for j in remain_coor:
+        sub_coor.append(A.get_eigen_function(j,i))
+      x_coor.append(sub_coor)
+    else:
+      x_coor.append(A.get_eigen_function(remain_coor[0], i))
   
   y_coor = []
   for j in range(1, jmax+1):
-    y_coor.append(B.get_eigen_function(k,j))
+    if remain_coor.size > 1:
+      sub_coor = []
+      for q in remain_coor:
+        sub_coor.append(B.get_eigen_function(q,j))
+      y_coor.append(sub_coor)
+    else:
+      y_coor.append(B.get_eigen_function(remain_coor[0],j))
 
   return D, x_coor, y_coor
 

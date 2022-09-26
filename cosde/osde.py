@@ -11,7 +11,7 @@ class MultiOSDE:
   def __init__(self, kernel_list):
     self.fitted = False
     self.kernel = kernel_list
-    
+    self.mode = len(kernel_list)
     self.data = []
     self.eigv = []
     self.eigh = []
